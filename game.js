@@ -109,27 +109,27 @@ function update() {
     f.y += f.vy;
   });
 
-  if (!gameOver) {
-    for (let i = fireballs.length - 1; i >= 0; i--) {
-      const f = fireballs[i];
-      const out =
-        f.x < -10 || f.x > canvas.width + 10 || f.y < -10 || f.y > canvas.height + 10;
+  if (gameOver) return;
 
-      if (out) {
+  for (let i = fireballs.length - 1; i >= 0; i--) {
+    const f = fireballs[i];
+    const out =
+      f.x < -10 || f.x > canvas.width + 10 || f.y < -10 || f.y > canvas.height + 10;
+
+    if (out) {
+      fireballs.splice(i, 1);
+      continue;
+    }
+
+    if (enemy.alive) {
+      const hit = Math.hypot(f.x - enemy.x, f.y - enemy.y) < f.r + enemy.r;
+      if (hit) {
+        enemy.alive = false;
         fireballs.splice(i, 1);
-        continue;
-      }
-
-      if (enemy.alive) {
-        const hit = Math.hypot(f.x - enemy.x, f.y - enemy.y) < f.r + enemy.r;
-        if (hit) {
-          enemy.alive = false;
-          fireballs.splice(i, 1);
-          score += 1;
-          scoreEl.textContent = score;
-          statusEl.textContent = 'Enemy defeated! You win. Press Restart to play again.';
-          restartBtn.hidden = false;
-        }
+        score += 1;
+        scoreEl.textContent = score;
+        statusEl.textContent = 'Enemy defeated! You win. Press Restart to play again.';
+        restartBtn.hidden = false;
       }
     }
   }
