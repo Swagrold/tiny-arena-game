@@ -28,6 +28,8 @@ const enemy = {
 
 const fireballs = [];
 
+canvas.focus();
+
 function resetGame() {
   score = 0;
   gameOver = false;
@@ -42,28 +44,40 @@ function resetGame() {
   healthEl.textContent = player.health;
   statusEl.textContent = '';
   restartBtn.hidden = true;
+  canvas.focus();
   requestAnimationFrame(loop);
 }
 
-window.addEventListener('keydown', (e) => {
-  keys[e.key.toLowerCase()] = true;
+function setKey(e, isDown) {
+  const key = e.key.toLowerCase();
+  keys[key] = isDown;
 
-  // Stop arrow keys from scrolling the page while playing on iPad/keyboard.
-  if (['arrowup', 'arrowdown', 'arrowleft', 'arrowright', ' '].includes(e.key.toLowerCase())) {
+  // Critical for iPad Magic Keyboard: stop arrow keys from scrolling Safari.
+  if (['arrowup', 'arrowdown', 'arrowleft', 'arrowright', ' '].includes(key)) {
     e.preventDefault();
+    e.stopPropagation();
   }
-});
+}
 
-window.addEventListener('keyup', (e) => {
-  keys[e.key.toLowerCase()] = false;
-});
+window.addEventListener('keydown', (e) => setKey(e, true), { capture: true });
+window.addEventListener('keyup', (e) => setKey(e, false), { capture: true });
+document.addEventListener('keydown', (e) => setKey(e, true), { capture: true });
+document.addEventListener('keyup', (e) => setKey(e, false), { capture: true });
+canvas.addEventListener('keydown', (e) => setKey(e, true));
+canvas.addEventListener('keyup', (e) => setKey(e, false));
 
-canvas.addEventListener('mousedown', (e) => {
+window.addEventListener('touchmove', (e) => e.preventDefault(), { passive: false });
+
+canvas.addEventListener('pointerdown', (e) => {
+  canvas.focus();
+
   if (gameOver) return;
 
   const rect = canvas.getBoundingClientRect();
-  const mx = e.clientX - rect.left;
-  const my = e.clientY - rect.top;
+  const scaleX = canvas.width / rect.width;
+  const scaleY = canvas.height / rect.height;
+  const mx = (e.clientX - rect.left) * scaleX;
+  const my = (e.clientY - rect.top) * scaleY;
   const dx = mx - player.x;
   const dy = my - player.y;
   const len = Math.hypot(dx, dy) || 1;
@@ -81,7 +95,7 @@ restartBtn.addEventListener('click', resetGame);
 
 function update() {
   // Movement supports both WASD and arrow keys.
-  // This lets the game work even if your W key is broken.
+  // Arrow keys are best for iPad Magic Keyboard if your W key is broken.
   if (keys.w || keys.arrowup) player.y -= player.speed;
   if (keys.s || keys.arrowdown) player.y += player.speed;
   if (keys.a || keys.arrowleft) player.x -= player.speed;
