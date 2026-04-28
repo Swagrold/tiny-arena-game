@@ -11,6 +11,7 @@ const keys = {};
 let lastKey = 'none';
 let score = 0;
 let gameOver = false;
+let animationFrameId = null;
 
 const player = {
   x: 120,
@@ -32,12 +33,19 @@ const fireballs = [];
 
 function updateDebug() {
   const active = Object.keys(keys).filter((key) => keys[key]).join(', ') || 'none';
-  debugEl.textContent = `ESDF test build | Last key: ${lastKey} | Active: ${active} | Player: ${Math.round(player.x)}, ${Math.round(player.y)}`;
+  debugEl.textContent = `ESDF stable build | Last key: ${lastKey} | Active: ${active} | Player: ${Math.round(player.x)}, ${Math.round(player.y)}`;
 }
 
 function focusGame() {
   canvas.focus();
   updateDebug();
+}
+
+function startGameLoop() {
+  if (animationFrameId !== null) {
+    cancelAnimationFrame(animationFrameId);
+  }
+  animationFrameId = requestAnimationFrame(loop);
 }
 
 focusGame();
@@ -46,6 +54,11 @@ document.body.addEventListener('pointerdown', focusGame);
 canvas.addEventListener('pointerdown', focusGame);
 
 function resetGame() {
+  if (animationFrameId !== null) {
+    cancelAnimationFrame(animationFrameId);
+    animationFrameId = null;
+  }
+
   score = 0;
   gameOver = false;
   player.x = 120;
@@ -55,12 +68,17 @@ function resetGame() {
   enemy.y = 200;
   enemy.alive = true;
   fireballs.length = 0;
+
+  for (const key of Object.keys(keys)) {
+    keys[key] = false;
+  }
+
   scoreEl.textContent = score;
   healthEl.textContent = player.health;
   statusEl.textContent = '';
   restartBtn.hidden = true;
   focusGame();
-  requestAnimationFrame(loop);
+  startGameLoop();
 }
 
 function setKey(e, isDown) {
@@ -164,6 +182,7 @@ function update() {
       const hit = Math.hypot(fireball.x - enemy.x, fireball.y - enemy.y) < fireball.r + enemy.r;
       if (hit) {
         enemy.alive = false;
+        gameOver = true;
         fireballs.splice(i, 1);
         score += 1;
         scoreEl.textContent = score;
@@ -196,15 +215,14 @@ function draw() {
 }
 
 function loop() {
-  if (gameOver) {
-    draw();
-    return;
-  }
-
   update();
   draw();
 
-  requestAnimationFrame(loop);
+  if (!gameOver) {
+    animationFrameId = requestAnimationFrame(loop);
+  } else {
+    animationFrameId = null;
+  }
 }
 
-requestAnimationFrame(loop);
+startGameLoop();
