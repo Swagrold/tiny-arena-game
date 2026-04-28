@@ -7,6 +7,13 @@ const statusEl = document.getElementById('status');
 const restartBtn = document.getElementById('restart');
 
 const keys = {};
+const touchMove = {
+  up: false,
+  down: false,
+  left: false,
+  right: false,
+};
+
 let score = 0;
 let gameOver = false;
 
@@ -52,12 +59,41 @@ function setKey(e, isDown) {
   const key = e.key.toLowerCase();
   keys[key] = isDown;
 
-  // Keep Safari from scrolling if arrow keys or space are pressed.
   if (['arrowup', 'arrowdown', 'arrowleft', 'arrowright', ' '].includes(key)) {
     e.preventDefault();
     e.stopPropagation();
   }
 }
+
+function bindMoveButton(buttonId, direction) {
+  const button = document.getElementById(buttonId);
+  if (!button) return;
+
+  const start = (e) => {
+    e.preventDefault();
+    touchMove[direction] = true;
+    button.classList.add('pressed');
+    canvas.focus();
+  };
+
+  const stop = (e) => {
+    e.preventDefault();
+    touchMove[direction] = false;
+    button.classList.remove('pressed');
+  };
+
+  button.addEventListener('pointerdown', start);
+  button.addEventListener('pointerup', stop);
+  button.addEventListener('pointercancel', stop);
+  button.addEventListener('pointerleave', stop);
+  button.addEventListener('touchstart', start, { passive: false });
+  button.addEventListener('touchend', stop, { passive: false });
+}
+
+bindMoveButton('move-up', 'up');
+bindMoveButton('move-down', 'down');
+bindMoveButton('move-left', 'left');
+bindMoveButton('move-right', 'right');
 
 window.addEventListener('keydown', (e) => setKey(e, true), { capture: true });
 window.addEventListener('keyup', (e) => setKey(e, false), { capture: true });
@@ -94,18 +130,15 @@ canvas.addEventListener('pointerdown', (e) => {
 restartBtn.addEventListener('click', resetGame);
 
 function update() {
-  // iPad-friendly ESDF movement:
-  // E = up, D = down, S = left, F = right.
-  if (keys.e) player.y -= player.speed;
-  if (keys.d) player.y += player.speed;
-  if (keys.s) player.x -= player.speed;
-  if (keys.f) player.x += player.speed;
+  const moveUp = keys.e || keys.w || keys.arrowup || touchMove.up;
+  const moveDown = keys.d || keys.s || keys.arrowdown || touchMove.down;
+  const moveLeft = keys.s || keys.a || keys.arrowleft || touchMove.left;
+  const moveRight = keys.f || keys.d || keys.arrowright || touchMove.right;
 
-  // Arrow keys still work on browsers that allow them, but ESDF is the main iPad control.
-  if (keys.arrowup) player.y -= player.speed;
-  if (keys.arrowdown) player.y += player.speed;
-  if (keys.arrowleft) player.x -= player.speed;
-  if (keys.arrowright) player.x += player.speed;
+  if (moveUp) player.y -= player.speed;
+  if (moveDown) player.y += player.speed;
+  if (moveLeft) player.x -= player.speed;
+  if (moveRight) player.x += player.speed;
 
   player.x = Math.max(player.r, Math.min(canvas.width - player.r, player.x));
   player.y = Math.max(player.r, Math.min(canvas.height - player.r, player.y));
