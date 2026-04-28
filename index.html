@@ -12,13 +12,20 @@
   <body>
     <div class="ui">
       <h1>Tiny Arena</h1>
-      <p>Move: E Up, D Down, S Left, F Right | Shoot: Click / Trackpad Tap</p>
+      <p>Move: On-screen buttons or E/D/S/F | Shoot: Tap/click arena</p>
       <p>Score: <span id="score">0</span> | Health: <span id="health">100</span></p>
       <button id="restart" hidden>Restart</button>
       <p id="status"></p>
     </div>
 
     <canvas id="game" width="640" height="400" tabindex="0" aria-label="Tiny Arena game canvas"></canvas>
+
+    <div class="dpad" aria-label="Movement controls">
+      <button id="move-up" class="control-btn up" type="button">▲</button>
+      <button id="move-left" class="control-btn left" type="button">◀</button>
+      <button id="move-down" class="control-btn down" type="button">▼</button>
+      <button id="move-right" class="control-btn right" type="button">▶</button>
+    </div>
 
     <script src="game.js"></script>
   </body>
