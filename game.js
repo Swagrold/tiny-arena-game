@@ -52,7 +52,7 @@ function setKey(e, isDown) {
   const key = e.key.toLowerCase();
   keys[key] = isDown;
 
-  // Critical for iPad Magic Keyboard: stop arrow keys from scrolling Safari.
+  // Keep Safari from scrolling if arrow keys or space are pressed.
   if (['arrowup', 'arrowdown', 'arrowleft', 'arrowright', ' '].includes(key)) {
     e.preventDefault();
     e.stopPropagation();
@@ -94,12 +94,18 @@ canvas.addEventListener('pointerdown', (e) => {
 restartBtn.addEventListener('click', resetGame);
 
 function update() {
-  // Movement supports both WASD and arrow keys.
-  // Arrow keys are best for iPad Magic Keyboard if your W key is broken.
-  if (keys.w || keys.arrowup) player.y -= player.speed;
-  if (keys.s || keys.arrowdown) player.y += player.speed;
-  if (keys.a || keys.arrowleft) player.x -= player.speed;
-  if (keys.d || keys.arrowright) player.x += player.speed;
+  // iPad-friendly ESDF movement:
+  // E = up, D = down, S = left, F = right.
+  if (keys.e) player.y -= player.speed;
+  if (keys.d) player.y += player.speed;
+  if (keys.s) player.x -= player.speed;
+  if (keys.f) player.x += player.speed;
+
+  // Arrow keys still work on browsers that allow them, but ESDF is the main iPad control.
+  if (keys.arrowup) player.y -= player.speed;
+  if (keys.arrowdown) player.y += player.speed;
+  if (keys.arrowleft) player.x -= player.speed;
+  if (keys.arrowright) player.x += player.speed;
 
   player.x = Math.max(player.r, Math.min(canvas.width - player.r, player.x));
   player.y = Math.max(player.r, Math.min(canvas.height - player.r, player.y));
