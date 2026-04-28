@@ -11,7 +11,7 @@ const keys = {};
 let lastKey = 'none';
 let score = 0;
 let gameOver = false;
-let animationFrameId = null;
+let frames = 0;
 
 const player = {
   x: 120,
@@ -33,19 +33,12 @@ const fireballs = [];
 
 function updateDebug() {
   const active = Object.keys(keys).filter((key) => keys[key]).join(', ') || 'none';
-  debugEl.textContent = `ESDF stable build | Last key: ${lastKey} | Active: ${active} | Player: ${Math.round(player.x)}, ${Math.round(player.y)}`;
+  debugEl.textContent = `ONE LOOP build | Last key: ${lastKey} | Active: ${active} | Player: ${Math.round(player.x)}, ${Math.round(player.y)} | Frames: ${frames}`;
 }
 
 function focusGame() {
   canvas.focus();
   updateDebug();
-}
-
-function startGameLoop() {
-  if (animationFrameId !== null) {
-    cancelAnimationFrame(animationFrameId);
-  }
-  animationFrameId = requestAnimationFrame(loop);
 }
 
 focusGame();
@@ -54,11 +47,6 @@ document.body.addEventListener('pointerdown', focusGame);
 canvas.addEventListener('pointerdown', focusGame);
 
 function resetGame() {
-  if (animationFrameId !== null) {
-    cancelAnimationFrame(animationFrameId);
-    animationFrameId = null;
-  }
-
   score = 0;
   gameOver = false;
   player.x = 120;
@@ -78,7 +66,6 @@ function resetGame() {
   statusEl.textContent = '';
   restartBtn.hidden = true;
   focusGame();
-  startGameLoop();
 }
 
 function setKey(e, isDown) {
@@ -95,10 +82,6 @@ function setKey(e, isDown) {
 
 window.addEventListener('keydown', (e) => setKey(e, true), { capture: true });
 window.addEventListener('keyup', (e) => setKey(e, false), { capture: true });
-document.addEventListener('keydown', (e) => setKey(e, true), { capture: true });
-document.addEventListener('keyup', (e) => setKey(e, false), { capture: true });
-canvas.addEventListener('keydown', (e) => setKey(e, true));
-canvas.addEventListener('keyup', (e) => setKey(e, false));
 
 window.addEventListener('touchmove', (e) => e.preventDefault(), { passive: false });
 
@@ -126,6 +109,13 @@ canvas.addEventListener('pointerdown', (e) => {
 restartBtn.addEventListener('click', resetGame);
 
 function update() {
+  frames += 1;
+
+  if (gameOver) {
+    updateDebug();
+    return;
+  }
+
   // Pure ESDF only:
   // E = up, D = down, S = left, F = right.
   if (keys.e) player.y -= player.speed;
@@ -162,8 +152,6 @@ function update() {
     fireball.x += fireball.vx;
     fireball.y += fireball.vy;
   });
-
-  if (gameOver) return;
 
   for (let i = fireballs.length - 1; i >= 0; i--) {
     const fireball = fireballs[i];
@@ -217,12 +205,7 @@ function draw() {
 function loop() {
   update();
   draw();
-
-  if (!gameOver) {
-    animationFrameId = requestAnimationFrame(loop);
-  } else {
-    animationFrameId = null;
-  }
+  requestAnimationFrame(loop);
 }
 
-startGameLoop();
+requestAnimationFrame(loop);
