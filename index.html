@@ -7,20 +7,258 @@
       content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
     />
     <title>Tiny Arena</title>
-    <link rel="stylesheet" href="style.css?v=one-loop-2" />
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        margin: 0;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        background: #111;
+        color: #eee;
+        font-family: Arial, sans-serif;
+      }
+
+      body {
+        display: grid;
+        place-items: center;
+        gap: 8px;
+      }
+
+      .ui {
+        text-align: center;
+      }
+
+      h1,
+      p {
+        margin: 4px 0;
+      }
+
+      #game {
+        border: 2px solid #333;
+        background: #1a1a1a;
+        cursor: crosshair;
+        outline: none;
+        max-width: 96vw;
+        max-height: 70vh;
+      }
+
+      #restart {
+        margin-top: 6px;
+        padding: 8px 14px;
+        border: none;
+        border-radius: 6px;
+        background: #f97316;
+        color: #fff;
+        font-weight: 700;
+      }
+    </style>
   </head>
   <body>
     <div class="ui">
       <h1>Tiny Arena</h1>
       <p>Move: E Up, D Down, S Left, F Right | Shoot: tap/click arena</p>
       <p>Score: <span id="score">0</span> | Health: <span id="health">100</span></p>
-      <p id="debug">ONE LOOP build loading...</p>
       <button id="restart" hidden>Restart</button>
       <p id="status"></p>
     </div>
 
     <canvas id="game" width="640" height="400" tabindex="0" aria-label="Tiny Arena game canvas"></canvas>
 
-    <script src="game.js?v=one-loop-2"></script>
+    <script>
+      const canvas = document.getElementById('game');
+      const ctx = canvas.getContext('2d');
+
+      const scoreEl = document.getElementById('score');
+      const healthEl = document.getElementById('health');
+      const statusEl = document.getElementById('status');
+      const restartBtn = document.getElementById('restart');
+
+      const keys = {};
+      let score = 0;
+      let gameOver = false;
+
+      const player = {
+        x: 120,
+        y: 200,
+        r: 12,
+        speed: 2.6,
+        health: 100,
+      };
+
+      const enemy = {
+        x: 520,
+        y: 200,
+        r: 14,
+        speed: 1.2,
+        alive: true,
+      };
+
+      const fireballs = [];
+
+      function focusGame() {
+        canvas.focus();
+      }
+
+      focusGame();
+      window.addEventListener('load', focusGame);
+      document.body.addEventListener('pointerdown', focusGame);
+      canvas.addEventListener('pointerdown', focusGame);
+
+      function resetGame() {
+        score = 0;
+        gameOver = false;
+        player.x = 120;
+        player.y = 200;
+        player.health = 100;
+        enemy.x = 520;
+        enemy.y = 200;
+        enemy.alive = true;
+        fireballs.length = 0;
+
+        for (const key of Object.keys(keys)) {
+          keys[key] = false;
+        }
+
+        scoreEl.textContent = score;
+        healthEl.textContent = player.health;
+        statusEl.textContent = '';
+        restartBtn.hidden = true;
+        focusGame();
+      }
+
+      function setKey(event, isDown) {
+        const key = event.key.toLowerCase();
+        keys[key] = isDown;
+
+        if (['e', 's', 'd', 'f', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright', ' '].includes(key)) {
+          event.preventDefault();
+          event.stopPropagation();
+        }
+      }
+
+      window.addEventListener('keydown', (event) => setKey(event, true), { capture: true });
+      window.addEventListener('keyup', (event) => setKey(event, false), { capture: true });
+
+      window.addEventListener('touchmove', (event) => event.preventDefault(), { passive: false });
+
+      canvas.addEventListener('pointerdown', (event) => {
+        if (gameOver) return;
+
+        const rect = canvas.getBoundingClientRect();
+        const scaleX = canvas.width / rect.width;
+        const scaleY = canvas.height / rect.height;
+        const mx = (event.clientX - rect.left) * scaleX;
+        const my = (event.clientY - rect.top) * scaleY;
+        const dx = mx - player.x;
+        const dy = my - player.y;
+        const len = Math.hypot(dx, dy) || 1;
+
+        fireballs.push({
+          x: player.x,
+          y: player.y,
+          vx: (dx / len) * 5,
+          vy: (dy / len) * 5,
+          r: 5,
+        });
+      });
+
+      restartBtn.addEventListener('click', resetGame);
+
+      function update() {
+        if (gameOver) return;
+
+        if (keys.e) player.y -= player.speed;
+        if (keys.d) player.y += player.speed;
+        if (keys.s) player.x -= player.speed;
+        if (keys.f) player.x += player.speed;
+
+        player.x = Math.max(player.r, Math.min(canvas.width - player.r, player.x));
+        player.y = Math.max(player.r, Math.min(canvas.height - player.r, player.y));
+
+        if (enemy.alive) {
+          const dx = player.x - enemy.x;
+          const dy = player.y - enemy.y;
+          const len = Math.hypot(dx, dy) || 1;
+          enemy.x += (dx / len) * enemy.speed;
+          enemy.y += (dy / len) * enemy.speed;
+
+          const touchDist = player.r + enemy.r;
+          if (Math.hypot(dx, dy) < touchDist) {
+            player.health -= 0.5;
+            healthEl.textContent = Math.max(0, Math.floor(player.health));
+          }
+
+          if (player.health <= 0) {
+            gameOver = true;
+            statusEl.textContent = 'Game Over!';
+            restartBtn.hidden = false;
+            return;
+          }
+        }
+
+        fireballs.forEach((fireball) => {
+          fireball.x += fireball.vx;
+          fireball.y += fireball.vy;
+        });
+
+        for (let i = fireballs.length - 1; i >= 0; i--) {
+          const fireball = fireballs[i];
+          const out =
+            fireball.x < -10 ||
+            fireball.x > canvas.width + 10 ||
+            fireball.y < -10 ||
+            fireball.y > canvas.height + 10;
+
+          if (out) {
+            fireballs.splice(i, 1);
+            continue;
+          }
+
+          if (enemy.alive) {
+            const hit = Math.hypot(fireball.x - enemy.x, fireball.y - enemy.y) < fireball.r + enemy.r;
+            if (hit) {
+              enemy.alive = false;
+              gameOver = true;
+              fireballs.splice(i, 1);
+              score += 1;
+              scoreEl.textContent = score;
+              statusEl.textContent = 'Enemy defeated! You win. Press Restart to play again.';
+              restartBtn.hidden = false;
+            }
+          }
+        }
+      }
+
+      function drawCircle(x, y, r, color) {
+        ctx.beginPath();
+        ctx.arc(x, y, r, 0, Math.PI * 2);
+        ctx.fillStyle = color;
+        ctx.fill();
+      }
+
+      function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        drawCircle(player.x, player.y, player.r, '#38bdf8');
+
+        if (enemy.alive) {
+          drawCircle(enemy.x, enemy.y, enemy.r, '#ef4444');
+        }
+
+        fireballs.forEach((fireball) => drawCircle(fireball.x, fireball.y, fireball.r, '#fb923c'));
+      }
+
+      function loop() {
+        update();
+        draw();
+        requestAnimationFrame(loop);
+      }
+
+      requestAnimationFrame(loop);
+    </script>
   </body>
 </html>
