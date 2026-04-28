@@ -5,15 +5,10 @@ const scoreEl = document.getElementById('score');
 const healthEl = document.getElementById('health');
 const statusEl = document.getElementById('status');
 const restartBtn = document.getElementById('restart');
+const debugEl = document.getElementById('debug');
 
 const keys = {};
-const touchMove = {
-  up: false,
-  down: false,
-  left: false,
-  right: false,
-};
-
+let lastKey = 'none';
 let score = 0;
 let gameOver = false;
 
@@ -35,7 +30,20 @@ const enemy = {
 
 const fireballs = [];
 
-canvas.focus();
+function updateDebug() {
+  const active = Object.keys(keys).filter((key) => keys[key]).join(', ') || 'none';
+  debugEl.textContent = `ESDF test build | Last key: ${lastKey} | Active: ${active} | Player: ${Math.round(player.x)}, ${Math.round(player.y)}`;
+}
+
+function focusGame() {
+  canvas.focus();
+  updateDebug();
+}
+
+focusGame();
+window.addEventListener('load', focusGame);
+document.body.addEventListener('pointerdown', focusGame);
+canvas.addEventListener('pointerdown', focusGame);
 
 function resetGame() {
   score = 0;
@@ -51,49 +59,21 @@ function resetGame() {
   healthEl.textContent = player.health;
   statusEl.textContent = '';
   restartBtn.hidden = true;
-  canvas.focus();
+  focusGame();
   requestAnimationFrame(loop);
 }
 
 function setKey(e, isDown) {
   const key = e.key.toLowerCase();
   keys[key] = isDown;
+  lastKey = `${key} ${isDown ? 'down' : 'up'}`;
+  updateDebug();
 
-  if (['arrowup', 'arrowdown', 'arrowleft', 'arrowright', ' '].includes(key)) {
+  if (['e', 's', 'd', 'f', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright', ' '].includes(key)) {
     e.preventDefault();
     e.stopPropagation();
   }
 }
-
-function bindMoveButton(buttonId, direction) {
-  const button = document.getElementById(buttonId);
-  if (!button) return;
-
-  const start = (e) => {
-    e.preventDefault();
-    touchMove[direction] = true;
-    button.classList.add('pressed');
-    canvas.focus();
-  };
-
-  const stop = (e) => {
-    e.preventDefault();
-    touchMove[direction] = false;
-    button.classList.remove('pressed');
-  };
-
-  button.addEventListener('pointerdown', start);
-  button.addEventListener('pointerup', stop);
-  button.addEventListener('pointercancel', stop);
-  button.addEventListener('pointerleave', stop);
-  button.addEventListener('touchstart', start, { passive: false });
-  button.addEventListener('touchend', stop, { passive: false });
-}
-
-bindMoveButton('move-up', 'up');
-bindMoveButton('move-down', 'down');
-bindMoveButton('move-left', 'left');
-bindMoveButton('move-right', 'right');
 
 window.addEventListener('keydown', (e) => setKey(e, true), { capture: true });
 window.addEventListener('keyup', (e) => setKey(e, false), { capture: true });
@@ -105,8 +85,6 @@ canvas.addEventListener('keyup', (e) => setKey(e, false));
 window.addEventListener('touchmove', (e) => e.preventDefault(), { passive: false });
 
 canvas.addEventListener('pointerdown', (e) => {
-  canvas.focus();
-
   if (gameOver) return;
 
   const rect = canvas.getBoundingClientRect();
@@ -130,15 +108,12 @@ canvas.addEventListener('pointerdown', (e) => {
 restartBtn.addEventListener('click', resetGame);
 
 function update() {
-  const moveUp = keys.e || keys.w || keys.arrowup || touchMove.up;
-  const moveDown = keys.d || keys.s || keys.arrowdown || touchMove.down;
-  const moveLeft = keys.s || keys.a || keys.arrowleft || touchMove.left;
-  const moveRight = keys.f || keys.d || keys.arrowright || touchMove.right;
-
-  if (moveUp) player.y -= player.speed;
-  if (moveDown) player.y += player.speed;
-  if (moveLeft) player.x -= player.speed;
-  if (moveRight) player.x += player.speed;
+  // Pure ESDF only:
+  // E = up, D = down, S = left, F = right.
+  if (keys.e) player.y -= player.speed;
+  if (keys.d) player.y += player.speed;
+  if (keys.s) player.x -= player.speed;
+  if (keys.f) player.x += player.speed;
 
   player.x = Math.max(player.r, Math.min(canvas.width - player.r, player.x));
   player.y = Math.max(player.r, Math.min(canvas.height - player.r, player.y));
@@ -160,21 +135,25 @@ function update() {
       gameOver = true;
       statusEl.textContent = 'Game Over!';
       restartBtn.hidden = false;
+      updateDebug();
       return;
     }
   }
 
-  fireballs.forEach((f) => {
-    f.x += f.vx;
-    f.y += f.vy;
+  fireballs.forEach((fireball) => {
+    fireball.x += fireball.vx;
+    fireball.y += fireball.vy;
   });
 
   if (gameOver) return;
 
   for (let i = fireballs.length - 1; i >= 0; i--) {
-    const f = fireballs[i];
+    const fireball = fireballs[i];
     const out =
-      f.x < -10 || f.x > canvas.width + 10 || f.y < -10 || f.y > canvas.height + 10;
+      fireball.x < -10 ||
+      fireball.x > canvas.width + 10 ||
+      fireball.y < -10 ||
+      fireball.y > canvas.height + 10;
 
     if (out) {
       fireballs.splice(i, 1);
@@ -182,7 +161,7 @@ function update() {
     }
 
     if (enemy.alive) {
-      const hit = Math.hypot(f.x - enemy.x, f.y - enemy.y) < f.r + enemy.r;
+      const hit = Math.hypot(fireball.x - enemy.x, fireball.y - enemy.y) < fireball.r + enemy.r;
       if (hit) {
         enemy.alive = false;
         fireballs.splice(i, 1);
@@ -193,6 +172,8 @@ function update() {
       }
     }
   }
+
+  updateDebug();
 }
 
 function drawCircle(x, y, r, color) {
@@ -211,7 +192,7 @@ function draw() {
     drawCircle(enemy.x, enemy.y, enemy.r, '#ef4444');
   }
 
-  fireballs.forEach((f) => drawCircle(f.x, f.y, f.r, '#fb923c'));
+  fireballs.forEach((fireball) => drawCircle(fireball.x, fireball.y, fireball.r, '#fb923c'));
 }
 
 function loop() {
@@ -223,9 +204,7 @@ function loop() {
   update();
   draw();
 
-  if (!gameOver && enemy.alive) {
-    requestAnimationFrame(loop);
-  }
+  requestAnimationFrame(loop);
 }
 
 requestAnimationFrame(loop);
