@@ -47,6 +47,11 @@ function resetGame() {
 
 window.addEventListener('keydown', (e) => {
   keys[e.key.toLowerCase()] = true;
+
+  // Stop arrow keys from scrolling the page while playing on iPad/keyboard.
+  if (['arrowup', 'arrowdown', 'arrowleft', 'arrowright', ' '].includes(e.key.toLowerCase())) {
+    e.preventDefault();
+  }
 });
 
 window.addEventListener('keyup', (e) => {
@@ -75,10 +80,12 @@ canvas.addEventListener('mousedown', (e) => {
 restartBtn.addEventListener('click', resetGame);
 
 function update() {
-  if (keys.w) player.y -= player.speed;
-  if (keys.s) player.y += player.speed;
-  if (keys.a) player.x -= player.speed;
-  if (keys.d) player.x += player.speed;
+  // Movement supports both WASD and arrow keys.
+  // This lets the game work even if your W key is broken.
+  if (keys.w || keys.arrowup) player.y -= player.speed;
+  if (keys.s || keys.arrowdown) player.y += player.speed;
+  if (keys.a || keys.arrowleft) player.x -= player.speed;
+  if (keys.d || keys.arrowright) player.x += player.speed;
 
   player.x = Math.max(player.r, Math.min(canvas.width - player.r, player.x));
   player.y = Math.max(player.r, Math.min(canvas.height - player.r, player.y));
