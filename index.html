@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Hashashin Ember Arena</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div class="hud">
+      <h1>Hashashin Ember Arena</h1>
+      <div class="stats">
+        <span>Health: <strong id="health">100</strong></span>
+        <span>Score: <strong id="score">0</strong></span>
+        <span>Wave: <strong id="wave">1</strong></span>
+        <span>Relics: <strong id="relics">0</strong>/3</span>
+      </div>
+      <p id="status">Press Enter to begin.</p>
+      <p class="goal">Survive the guards. Collect relics. Unlock the shrine.</p>
+    </div>
+
+    <canvas id="game" width="960" height="540"></canvas>
+
+    <script src="game.js"></script>
+  </body>
+</html>

@@ -1,0 +1,49 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: radial-gradient(circle at 50% 20%, #1f2937 0%, #090b10 60%, #05070b 100%);
+  color: #e5e7eb;
+  font-family: Arial, Helvetica, sans-serif;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+}
+
+.hud {
+  width: min(980px, 96vw);
+  margin-bottom: 8px;
+}
+
+h1 {
+  margin: 0 0 8px;
+  color: #7dd3fc;
+}
+
+.stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 6px;
+}
+
+#status {
+  margin: 0;
+  color: #fbbf24;
+  min-height: 20px;
+}
+
+.goal {
+  margin: 4px 0 10px;
+  color: #9ca3af;
+}
+
+#game {
+  width: min(980px, 96vw);
+  border: 2px solid #334155;
+  background: #0b0f18;
+  cursor: crosshair;
+}
