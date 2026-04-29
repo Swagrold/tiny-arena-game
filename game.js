@@ -1,5 +1,6 @@
 const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d');
+// Final conflict-resolved Hashashin Ember Arena implementation.
 
 const healthEl = document.getElementById('health');
 const scoreEl = document.getElementById('score');
